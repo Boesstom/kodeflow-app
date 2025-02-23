@@ -3,8 +3,7 @@
   import { supabase } from '$lib/supabaseClient';
   import Navbar from '$lib/components/Navbar.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
-  import MateriModal from '$lib/components/MateriModal.svelte';
-  import DeleteConfirmationModal from '$lib/components/DeleteConfirmationModal.svelte';
+  import MaterialModal from '$lib/components/MaterialModal.svelte';
 
   export let data;
 
@@ -12,19 +11,26 @@
   let modul = null;
   let loading = true;
   let error = null;
-  let viewType = 'card'; // 'card' or 'list'
   let showModal = false;
-  let showDeleteModal = false;
+  let selectedMaterial = null;
   let isEditMode = false;
-  let selectedMateri = null;
-  let materiToDelete = null;
+  let newItem = '';
 
   $: modulId = data.modulId;
   $: programId = data.programId;
 
   onMount(async () => {
     if (modulId) {
-      await Promise.all([loadModul(), loadMateri()]);
+      try {
+        await Promise.all([loadModul(), loadMateri()]);
+      } catch (e) {
+        error = e.message;
+        console.error('Error loading initial data:', e);
+      } finally {
+        loading = false;
+      }
+    } else {
+      loading = false;
     }
   });
 
@@ -63,116 +69,118 @@
     }
   }
 
-  function toggleView() {
-    viewType = viewType === 'card' ? 'list' : 'card';
-  }
-
   function openAddModal() {
-    isEditMode = false;
-    selectedMateri = {
+    selectedMaterial = {
       judul: '',
       deskripsi: '',
       jumlah_video: 0,
-      tingkat_kesulitan: 'Pemula',
+      tingkat_kesulitan: '',
       durasi: '',
       tutor: '',
+      apa_yang_akan_dipelajari: [''],
+      target_pembelajaran: [''],
+      prasyarat: [''],
       url_video: '',
-      apa_yang_akan_dipelajari: [],
-      target_pembelajaran: [],
-      prasyarat: [],
       modul_id: modulId
     };
-    error = null;
+    isEditMode = false;
     showModal = true;
   }
 
-  function openEditModal(materiItem) {
+  function openEditModal(material) {
+    selectedMaterial = {
+      ...material,
+      apa_yang_akan_dipelajari: Array.isArray(material.apa_yang_akan_dipelajari) ? 
+        material.apa_yang_akan_dipelajari : [''],
+      target_pembelajaran: Array.isArray(material.target_pembelajaran) ? 
+        material.target_pembelajaran : [''],
+      prasyarat: Array.isArray(material.prasyarat) ? 
+        material.prasyarat : ['']
+    };
     isEditMode = true;
-    selectedMateri = { ...materiItem };
-    error = null;
     showModal = true;
   }
 
-  function openDeleteModal(materiItem) {
-    materiToDelete = materiItem;
-    showDeleteModal = true;
+  async function handleMaterialSubmit(event) {
+    const materialData = event.detail;
+    loading = true;
+    error = null;
+    
+    try {
+      if (isEditMode) {
+        const { error: err } = await supabase
+          .from('materi')
+          .update({
+            judul: materialData.judul,
+            deskripsi: materialData.deskripsi,
+            jumlah_video: materialData.jumlah_video,
+            tingkat_kesulitan: materialData.tingkat_kesulitan,
+            durasi: materialData.durasi,
+            tutor: materialData.tutor,
+            url_video: materialData.url_video,
+            apa_yang_akan_dipelajari: materialData.apa_yang_akan_dipelajari,
+            target_pembelajaran: materialData.target_pembelajaran,
+            prasyarat: materialData.prasyarat,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedMaterial.id);
+
+        if (err) throw err;
+      } else {
+        const { error: err } = await supabase
+          .from('materi')
+          .insert({
+            judul: materialData.judul,
+            deskripsi: materialData.deskripsi,
+            jumlah_video: materialData.jumlah_video,
+            tingkat_kesulitan: materialData.tingkat_kesulitan,
+            durasi: materialData.durasi,
+            tutor: materialData.tutor,
+            url_video: materialData.url_video,
+            apa_yang_akan_dipelajari: materialData.apa_yang_akan_dipelajari,
+            target_pembelajaran: materialData.target_pembelajaran,
+            prasyarat: materialData.prasyarat,
+            modul_id: parseInt(modulId),
+            created_at: new Date().toISOString()
+          });
+
+        if (err) throw err;
+      }
+
+      await loadMateri();
+      showModal = false;
+    } catch (e) {
+      error = e.message;
+      console.error('Error saving material:', e);
+    } finally {
+      loading = false;
+    }
   }
 
-  async function handleDelete() {
-    if (!materiToDelete) return;
+  function addItem() {
+    if (newItem) {
+      selectedMaterial.apa_yang_akan_dipelajari.push(newItem);
+      selectedMaterial.target_pembelajaran.push(newItem);
+      selectedMaterial.prasyarat.push(newItem);
+      newItem = '';
+    }
+  }
+
+  async function deleteMaterial(id) {
+    if (!confirm('Apakah Anda yakin ingin menghapus materi ini?')) return;
     
     try {
       loading = true;
       const { error: err } = await supabase
         .from('materi')
         .delete()
-        .eq('id', materiToDelete.id);
+        .eq('id', id);
 
       if (err) throw err;
-      
-      await loadMateri();
-      materiToDelete = null;
-    } catch (e) {
-      error = 'Error deleting materi: ' + e.message;
-      console.error('Error deleting materi:', e);
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function handleMateriSubmit(event) {
-    const materiData = event.detail;
-    loading = true;
-    error = null;
-    
-    try {
-      if (isEditMode && selectedMateri?.id) {
-        const { data, error: err } = await supabase
-          .from('materi')
-          .update({
-            judul: materiData.judul,
-            deskripsi: materiData.deskripsi,
-            jumlah_video: materiData.jumlah_video,
-            tingkat_kesulitan: materiData.tingkat_kesulitan,
-            durasi: materiData.durasi,
-            tutor: materiData.tutor,
-            url_video: materiData.url_video,
-            apa_yang_akan_dipelajari: materiData.apa_yang_akan_dipelajari,
-            target_pembelajaran: materiData.target_pembelajaran,
-            prasyarat: materiData.prasyarat
-          })
-          .eq('id', selectedMateri.id)
-          .select();
-
-        if (err) throw err;
-        console.log('Updated materi:', data);
-      } else {
-        const { data, error: err } = await supabase
-          .from('materi')
-          .insert([{
-            judul: materiData.judul,
-            deskripsi: materiData.deskripsi,
-            jumlah_video: materiData.jumlah_video,
-            tingkat_kesulitan: materiData.tingkat_kesulitan,
-            durasi: materiData.durasi,
-            tutor: materiData.tutor,
-            url_video: materiData.url_video,
-            apa_yang_akan_dipelajari: materiData.apa_yang_akan_dipelajari,
-            target_pembelajaran: materiData.target_pembelajaran,
-            prasyarat: materiData.prasyarat,
-            modul_id: modulId
-          }])
-          .select();
-
-        if (err) throw err;
-        console.log('Added new materi:', data);
-      }
-
-      showModal = false;
       await loadMateri();
     } catch (e) {
       error = e.message;
-      console.error('Error saving materi:', e);
+      console.error('Error deleting material:', e);
     } finally {
       loading = false;
     }
@@ -185,7 +193,6 @@
 
   <main class="lg:pl-64 pt-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Error Display -->
       {#if error}
         <div class="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
           <div class="flex">
@@ -203,38 +210,12 @@
 
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">{modul?.judul || 'Materi'}</h1>
-        
-        <div class="flex items-center space-x-4">
-          <!-- View Toggle Button -->
-          <button
-            on:click={toggleView}
-            class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            {#if viewType === 'card'}
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-              List View
-            {:else}
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-              Card View
-            {/if}
-          </button>
-
-          <!-- Add Materi Button -->
-          <button
-            on:click={openAddModal}
-            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            disabled={loading}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            {loading ? 'Memproses...' : 'Tambah Materi'}
-          </button>
-        </div>
+        <button
+          on:click={openAddModal}
+          class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Tambah Materi
+        </button>
       </div>
 
       {#if loading}
@@ -244,125 +225,68 @@
       {:else if materi.length === 0}
         <div class="text-center py-12">
           <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada materi</h3>
-          <p class="mt-1 text-sm text-gray-500">Mulai dengan membuat materi baru.</p>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">Belum ada materi</h3>
+          <p class="mt-1 text-sm text-gray-500">Mulai dengan menambahkan materi baru untuk modul ini.</p>
         </div>
       {:else}
-        {#if viewType === 'card'}
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {#each materi as materiItem}
-              <div class="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-                <div class="p-6">
-                  <div class="flex-1">
-                    <h3 class="text-lg font-medium text-gray-900 truncate">{materiItem.judul}</h3>
-                    <p class="mt-1 text-sm text-gray-500 line-clamp-2">{materiItem.deskripsi}</p>
-                  </div>
-                </div>
-                <div class="px-6 py-4 bg-gray-50 flex justify-between space-x-3">
-                  <div class="flex space-x-3">
-                    <a
-                      href="/program/{programId}/modul/{modulId}/materi/{materiItem.id}"
-                      class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Lihat
-                    </a>
-                    <button
-                      on:click={() => openEditModal(materiItem)}
-                      class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit
-                    </button>
-                  </div>
-                  <button
-                    on:click={() => openDeleteModal(materiItem)}
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Hapus
-                  </button>
-                </div>
-              </div>
-            {/each}
-          </div>
-        {:else}
-          <div class="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul class="divide-y divide-gray-200">
-              {#each materi as materiItem}
-                <li>
-                  <div class="px-4 py-4 sm:px-6">
-                    <div class="min-w-0 flex-1">
-                      <div class="flex items-center">
-                        <p class="text-lg font-medium text-blue-600 truncate">{materiItem.judul}</p>
-                      </div>
-                      <p class="mt-1 text-sm text-gray-500 line-clamp-2">{materiItem.deskripsi}</p>
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+          <ul class="divide-y divide-gray-200">
+            {#each materi as material}
+              <li>
+                <div class="px-4 py-4 sm:px-6">
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                      <h3 class="text-lg font-medium text-gray-900 truncate">{material.judul}</h3>
+                      <p class="mt-1 text-sm text-gray-500">{material.deskripsi}</p>
                     </div>
-                    <div class="mt-4 flex items-center space-x-3">
+                    <div class="flex-shrink-0 flex space-x-3">
+                      <button
+                        on:click={() => openEditModal(material)}
+                        class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors duration-200"
+                        aria-label="Edit materi"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                      </button>
+                      <button
+                        on:click={() => deleteMaterial(material.id)}
+                        class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors duration-200"
+                        aria-label="Hapus materi"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
                       <a
-                        href="/program/{programId}/modul/{modulId}/materi/{materiItem.id}"
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        href="/program/{programId}/modul/{modulId}/materi/{material.id}"
+                        class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200"
+                        aria-label="Lihat detail materi"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                         </svg>
-                        Lihat
                       </a>
-                      <button
-                        on:click={() => openEditModal(materiItem)}
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        on:click={() => openDeleteModal(materiItem)}
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Hapus
-                      </button>
                     </div>
                   </div>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        {/if}
+                </div>
+              </li>
+            {/each}
+          </ul>
+        </div>
       {/if}
     </div>
   </main>
 </div>
 
 {#if showModal}
-  <MateriModal
-    show={showModal}
-    isEdit={isEditMode}
-    modulId={modulId}
-    materiData={selectedMateri}
-    on:submit={handleMateriSubmit}
+  <MaterialModal
+    material={selectedMaterial}
+    {isEditMode}
+    modul_id={modulId}
+    on:submit={handleMaterialSubmit}
     on:close={() => showModal = false}
-  />
-{/if}
-
-{#if showDeleteModal}
-  <DeleteConfirmationModal
-    show={showDeleteModal}
-    title="Hapus Materi"
-    message="Apakah Anda yakin ingin menghapus materi ini? Tindakan ini tidak dapat dibatalkan."
-    on:confirm={handleDelete}
-    on:close={() => showDeleteModal = false}
   />
 {/if}

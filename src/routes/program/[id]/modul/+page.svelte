@@ -250,6 +250,7 @@
                   </div>
                   <div class="ml-5 flex-shrink-0 space-x-2">
                     <a
+                      aria-label="View module materials"
                       href="/program/{programId}/modul/{module.id}/materi"
                       class="inline-flex items-center p-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
@@ -259,6 +260,7 @@
                     </a>
                     <button
                       on:click={() => openEditModal(module)}
+                      aria-label="Edit module"
                       class="inline-flex items-center p-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -266,6 +268,7 @@
                       </svg>
                     </button>
                     <button
+                      aria-label="Delete module"
                       on:click={() => openDeleteModal(module)}
                       class="inline-flex items-center p-2 border border-gray-300 text-sm font-medium rounded-md text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
