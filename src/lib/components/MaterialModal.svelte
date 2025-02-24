@@ -11,7 +11,8 @@
     apa_yang_akan_dipelajari: [],
     target_pembelajaran: [],
     prasyarat: [],
-    url_video: ''
+    url_video: '',
+    url_quiz: ''
   };
   export let modul_id;
   export let isEditMode = false;
@@ -88,6 +89,7 @@
       durasi: material.durasi,
       tutor: material.tutor,
       url_video: material.url_video,
+      url_quiz: material.url_quiz,
       apa_yang_akan_dipelajari: learningItems.filter(item => item.trim()),
       target_pembelajaran: targetItems.filter(item => item.trim()),
       prasyarat: prerequisiteItems.filter(item => item.trim())
@@ -339,6 +341,18 @@
                 name="url_video"
                 id="url_video"
                 bind:value={material.url_video}
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-3 px-4"
+                required
+              />
+            </div>
+
+            <div>
+              <label for="url_quiz" class="block text-sm font-medium text-gray-700">URL Quiz</label>
+              <input
+                type="url"
+                name="url_quiz"
+                id="url_quiz"
+                bind:value={material.url_quiz}
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-3 px-4"
                 required
               />

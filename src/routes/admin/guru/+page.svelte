@@ -189,14 +189,6 @@
                     <p class="text-sm text-gray-500">
                       <span class="font-medium">Gaji per Pertemuan:</span> {formatCurrency(teacher.gaji_per_pertemuan)}
                     </p>
-                    <p class="text-sm text-gray-500">
-                      <span class="font-medium">Status Profil:</span>
-                      {#if teacher.sudah_isi_profil}
-                        <span class="text-green-600">Lengkap</span>
-                      {:else}
-                        <span class="text-yellow-600">Belum Lengkap</span>
-                      {/if}
-                    </p>
                   </div>
                   <button
                     on:click={() => openEditModal(teacher)}

@@ -72,8 +72,8 @@
   <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center" transition:fade>
     <div class="bg-white rounded-lg p-6 w-full max-w-lg mx-4" transition:fade>
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">Edit Data Guru</h2>
-        <button 
+        <h2 class="text-2xl font-bold text-gray-900">Detail Guru</h2>
+        <button aria-label="Close modal"
           type="button"
           class="text-gray-400 hover:text-gray-600" 
           on:click={closeModal}
@@ -85,99 +85,104 @@
       </div>
 
       <form on:submit|preventDefault={handleSubmit} class="space-y-6">
-        <div class="space-y-1.5">
-          <label for="nama" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-          <input
-            type="text"
-            id="nama"
-            bind:value={teacherData.nama}
-            class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
-            minlength="1"
-            maxlength="255"
-            placeholder="Masukkan nama lengkap"
-          />
+        <!-- Profile Section -->
+        <div class="flex items-center space-x-4 mb-6">
+          <div class="flex-shrink-0">
+            <img
+              src={teacherData.gambar || 'https://via.placeholder.com/64'}
+              alt="Profile"
+              class="w-16 h-16 rounded-full object-cover"
+            />
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">{teacherData.nama || 'Nama'}</h3>
+            <p class="text-sm text-gray-500">{teacherData.email || 'email@email.com'}</p>
+          </div>
         </div>
 
-        <div class="space-y-1.5">
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            id="email"
-            bind:value={teacherData.email}
-            class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
-            placeholder="contoh@email.com"
-          />
-        </div>
+        <!-- Profile Form -->
+        <div class="space-y-4">
+          <div class="space-y-1.5">
+            <label for="alamat" class="block text-sm font-medium text-gray-700">Alamat</label>
+            <input
+              type="text"
+              id="alamat"
+              bind:value={teacherData.alamat}
+              class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+              placeholder="[alamat]"
+            />
+          </div>
 
-        <div class="space-y-1.5">
-          <label for="telfon" class="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
-          <input
-            type="tel"
-            id="telfon"
-            bind:value={teacherData.telfon}
-            class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
-            placeholder="08xxxxxxxxxx"
-          />
-        </div>
+          <div class="space-y-1.5">
+            <label for="telfon" class="block text-sm font-medium text-gray-700">Whatsapp</label>
+            <input
+              type="tel"
+              id="telfon"
+              bind:value={teacherData.telfon}
+              class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+              placeholder="-"
+            />
+          </div>
 
-        <div class="space-y-1.5">
-          <label for="alamat" class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-          <textarea
-            id="alamat"
-            bind:value={teacherData.alamat}
-            rows="3"
-            class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            required
-            placeholder="Masukkan alamat lengkap"
-          ></textarea>
-        </div>
-
-        <div class="space-y-1.5">
-          <label for="gaji_per_pertemuan" class="block text-sm font-medium text-gray-700 mb-1">Gaji per Pertemuan</label>
-          <div class="relative rounded-md shadow-sm">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-              <span class="text-gray-500 sm:text-sm">Rp</span>
-            </div>
+          <div class="space-y-1.5">
+            <label for="gaji_per_pertemuan" class="block text-sm font-medium text-gray-700">Gaji per pertemuan</label>
             <input
               type="number"
               id="gaji_per_pertemuan"
               bind:value={teacherData.gaji_per_pertemuan}
               min="0"
               step="1000"
-              class="block w-full pl-12 pr-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
               placeholder="0"
             />
           </div>
         </div>
 
-        <div class="space-y-1.5">
-          <label for="gambar" class="block text-sm font-medium text-gray-700 mb-1">URL Foto (Opsional)</label>
-          <input
-            type="url"
-            id="gambar"
-            bind:value={teacherData.gambar}
-            class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="https://example.com/photo.jpg"
-          />
+        <!-- Salary Cards -->
+        <div class="grid grid-cols-2 gap-4 mt-6">
+          <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-medium text-gray-700">Gaji</h4>
+              <button aria-label="Label" class="text-purple-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            </div>
+            <p class="text-lg font-semibold mt-1">0</p>
+            <p class="text-sm text-gray-500">Belum terbayar</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-medium text-gray-700">Gaji</h4>
+              <button aria-label="Label" class="text-purple-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            </div>
+            <p class="text-lg font-semibold mt-1">0</p>
+            <p class="text-sm text-gray-500">Sudah terbayar</p>
+          </div>
         </div>
 
         <div class="flex justify-end space-x-3 pt-6">
           <button
             type="button"
-            class="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+            class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
             on:click={closeModal}
           >
-            Batal
+            Tutup
           </button>
           <button
             type="submit"
-            class="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+            class="px-6 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
           >
-            Simpan Perubahan
+            Simpan
           </button>
         </div>
       </form>

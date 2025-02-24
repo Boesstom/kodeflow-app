@@ -6,66 +6,36 @@
 
   export let data;
 
-  let materi = null;
   let loading = true;
   let error = null;
-  let videoId = '';
-  let activeTab = 'materi';
-  let quiz = null;
+  
+  // Dummy teacher data
+  let teacherData = {
+    nama: 'John Doe',
+    email: 'john.doe@example.com',
+    telfon: '08123456789',
+    alamat: 'Jl. Example Street No. 123',
+    gambar: 'https://example.com/photo.jpg',
+    gaji_per_pertemuan: 150000,
+    sudah_isi_profil: true
+  };
 
-  $: materiId = data.materiId;
+  // Dummy salary data
+  let salaryData = {
+    total_gaji: 1500000,
+    gaji_terbayar: 900000,
+    gaji_belum_terbayar: 600000,
+    riwayat_pembayaran: [
+      { tanggal: '2024-01-15', jumlah: 450000, status: 'Terbayar' },
+      { tanggal: '2024-01-01', jumlah: 450000, status: 'Terbayar' },
+      { tanggal: '2023-12-15', jumlah: 300000, status: 'Belum Terbayar' },
+      { tanggal: '2023-12-01', jumlah: 300000, status: 'Belum Terbayar' }
+    ]
+  };
 
-  onMount(async () => {
-    await Promise.all([loadMateri(), loadQuiz()]);
+  onMount(() => {
+    loading = false;
   });
-
-  async function loadMateri() {
-    try {
-      const { data: materiData, error: err } = await supabase
-        .from('materi')
-        .select('*')
-        .eq('id', materiId)
-        .single();
-
-      if (err) throw err;
-      
-      materi = materiData;
-      // Extract YouTube video ID from URL
-      if (materi.url_video) {
-        const url = new URL(materi.url_video);
-        if (url.hostname.includes('youtube.com')) {
-          videoId = url.searchParams.get('v');
-        } else if (url.hostname.includes('youtu.be')) {
-          videoId = url.pathname.substring(1);
-        }
-      }
-    } catch (e) {
-      error = e.message;
-      console.error('Error loading materi:', e);
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function loadQuiz() {
-    try {
-      const { data: quizData, error: err } = await supabase
-        .from('quiz')
-        .select('*')
-        .eq('materi_id', materiId)
-        .single();
-
-      if (err) throw err;
-
-      // Karena file sudah public, kita bisa langsung menggunakan URL-nya
-      if (quizData) {
-        quiz = quizData;
-        console.log('Quiz loaded:', quiz); // untuk debugging
-      }
-    } catch (e) {
-      console.error('Error loading quiz:', e);
-    }
-  }
 </script>
 
 <div class="min-h-screen bg-gray-50">
@@ -188,26 +158,13 @@
             </div>
           {:else if activeTab === 'quiz'}
             <div class="mt-8">
-              {#if quiz}
+              {#if materi.url_quiz}
                 <div class="bg-white shadow rounded-lg overflow-hidden">
                   <div class="p-6">
-                    <div class="mb-4">
-                      <div class="flex items-center space-x-4 mb-6">
-                        <div class="bg-gray-50 px-4 py-2 rounded-lg">
-                          <span class="text-sm text-gray-500">Percobaan yang diizinkan:</span>
-                          <span class="ml-2 text-lg font-semibold text-gray-900">{quiz.attempts_allowed}x</span>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-2 rounded-lg">
-                          <span class="text-sm text-gray-500">Skor minimum:</span>
-                          <span class="ml-2 text-lg font-semibold text-gray-900">{quiz.min_score}%</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <!-- H5P Content from Lumi -->
+                    <!-- H5P Content -->
                     <div class="relative w-full" style="padding-top: 75%;">
                       <iframe
-                        src={quiz.h5p_file_url}
+                        src={materi.url_quiz}
                         class="absolute top-0 left-0 w-full h-full"
                         frameborder="0"
                         allowfullscreen="allowfullscreen"
@@ -233,4 +190,4 @@
       {/if}
     </div>
   </main>
-</div> 
+</div>
