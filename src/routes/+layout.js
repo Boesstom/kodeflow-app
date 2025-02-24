@@ -5,6 +5,8 @@ import { get } from 'svelte/store';
 
 export const load = async ({ url }) => {
   const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    await initializeAuth();
 
   // List of public and protected routes
   const publicRoutes = ['/login', '/register', '/forgot-password'];
@@ -58,4 +60,5 @@ export const load = async ({ url }) => {
   return {
     session
   };
+};
 };

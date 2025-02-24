@@ -5,34 +5,39 @@
   import Sidebar from '$lib/components/Sidebar.svelte';
 
   export let data;
-
   let loading = true;
   let error = null;
-  
-  // Dummy teacher data
-  let teacherData = {
-    nama: 'John Doe',
-    email: 'john.doe@example.com',
-    telfon: '08123456789',
-    alamat: 'Jl. Example Street No. 123',
-    gambar: 'https://example.com/photo.jpg',
-    gaji_per_pertemuan: 150000,
-    sudah_isi_profil: true
-  };
+  let materi = null;
+  let activeTab = 'materi';
+  let videoId = null;
 
-  // Dummy salary data
-  let salaryData = {
-    total_gaji: 1500000,
-    gaji_terbayar: 900000,
-    gaji_belum_terbayar: 600000,
-    riwayat_pembayaran: [
-      { tanggal: '2024-01-15', jumlah: 450000, status: 'Terbayar' },
-      { tanggal: '2024-01-01', jumlah: 450000, status: 'Terbayar' },
-      { tanggal: '2023-12-15', jumlah: 300000, status: 'Belum Terbayar' },
-      { tanggal: '2023-12-01', jumlah: 300000, status: 'Belum Terbayar' }
-    ]
-  };
+  $: materiId = data.materiId;
 
+  onMount(async () => {
+    try {
+      const { data: materiData, error: err } = await supabase
+        .from('materi')
+        .select('*')
+        .eq('id', materiId)
+        .single();
+
+      if (err) throw err;
+      materi = materiData;
+
+      // Extract video ID from YouTube URL if exists
+      if (materi?.url_video) {
+        const url = new URL(materi.url_video);
+        if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
+          videoId = url.searchParams.get('v') || url.pathname.slice(1);
+        }
+      }
+    } catch (e) {
+      error = 'Error loading materi: ' + e.message;
+      console.error('Error loading materi:', e);
+    } finally {
+      loading = false;
+    }
+  });
   onMount(() => {
     loading = false;
   });

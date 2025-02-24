@@ -261,7 +261,7 @@
                         </svg>
                       </button>
                       <a
-                        href="/program/{programId}/modul/{modulId}/materi/{material.id}"
+                        href="/admin/program/{programId}/modul/{modulId}/materi/{material.id}/"
                         class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200"
                         aria-label="Lihat detail materi"
                       >
