@@ -124,6 +124,8 @@
     }
     filteredMeetings = meetings;
     updatePagination();
+    isModalOpen = false;
+    selectedMeeting = null;
   }
 
   function getStatusBadgeClass(status) {
@@ -311,6 +313,10 @@
   meeting={selectedMeeting}
   {kelasId}
   on:success={handleModalSuccess}
+  on:close={() => {
+    isModalOpen = false;
+    selectedMeeting = null;
+  }}
 />
 
 <Footer />

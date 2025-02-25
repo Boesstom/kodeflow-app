@@ -19,7 +19,6 @@
     jam: '',
     waktu_mulai_realisasi: '',
     waktu_selesai_realisasi: '',
-    gaji: '',
     materi: '',
     status_pembayaran: 'belum',
     status: 'belum'
@@ -33,7 +32,6 @@
       jam: meeting.jam || '',
       waktu_mulai_realisasi: meeting.waktu_mulai_realisasi || '',
       waktu_selesai_realisasi: meeting.waktu_selesai_realisasi || '',
-      gaji: meeting.gaji || '',
       materi: meeting.materi || '',
       status_pembayaran: meeting.status_pembayaran || 'belum',
       status: meeting.status || 'belum'
@@ -60,10 +58,19 @@
       loading = true;
       error = null;
 
+      // Get selected teacher's salary
+      const { data: teacherData, error: teacherError } = await supabase
+        .from('user_guru')
+        .select('gaji_per_pertemuan')
+        .eq('id', formData.guru_id)
+        .single();
+
+      if (teacherError) throw teacherError;
+
       const meetingData = {
         ...formData,
         kelas_id: kelasId,
-        gaji: parseFloat(formData.gaji)
+        gaji: teacherData.gaji_per_pertemuan
       };
 
       let result;
@@ -96,7 +103,7 @@
   }
 
   function closeModal() {
-    isOpen = false;
+    dispatch('close');
     formData = {
       guru_id: '',
       tanggal: '',
@@ -104,7 +111,21 @@
       jam: '',
       waktu_mulai_realisasi: '',
       waktu_selesai_realisasi: '',
-      gaji: '',
+      materi: '',
+      status_pembayaran: 'belum',
+      status: 'belum'
+    };
+    error = null;
+  }
+
+  $: if (!isOpen) {
+    formData = {
+      guru_id: '',
+      tanggal: '',
+      nomor_pertemuan: '',
+      jam: '',
+      waktu_mulai_realisasi: '',
+      waktu_selesai_realisasi: '',
       materi: '',
       status_pembayaran: 'belum',
       status: 'belum'
@@ -214,19 +235,7 @@
               />
             </div>
 
-            <!-- Gaji -->
-            <div class="space-y-2">
-              <label for="gaji" class="block text-sm font-medium text-gray-700">Gaji</label>
-              <input
-                type="number"
-                id="gaji"
-                bind:value={formData.gaji}
-                step="0.01"
-                required
-                class="block w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                disabled={loading}
-              />
-            </div>
+
 
             <!-- Status Pertemuan -->
             <div class="space-y-2">

@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { fade } from 'svelte/transition';
+  import { supabase } from '$lib/supabaseClient';
   
   export let show = false;
   export let teacherData = {
@@ -14,6 +15,38 @@
   };
 
   const dispatch = createEventDispatcher();
+  let unpaidSalary = 0;
+  let paidSalary = 0;
+
+  async function fetchSalaryInfo() {
+    if (!teacherData.id) return;
+
+    try {
+      // Fetch unpaid salary
+      const { data: unpaidData, error: unpaidError } = await supabase
+        .from('pertemuan')
+        .select('gaji')
+        .eq('guru_id', teacherData.id)
+        .eq('status_pembayaran', 'Belum');
+
+      if (unpaidError) throw unpaidError;
+
+      // Fetch paid salary
+      const { data: paidData, error: paidError } = await supabase
+        .from('pertemuan')
+        .select('gaji')
+        .eq('guru_id', teacherData.id)
+        .eq('status_pembayaran', 'Selesai');
+
+      if (paidError) throw paidError;
+
+      // Calculate totals
+      unpaidSalary = unpaidData.reduce((total, meeting) => total + (meeting.gaji || 0), 0);
+      paidSalary = paidData.reduce((total, meeting) => total + (meeting.gaji || 0), 0);
+    } catch (error) {
+      console.error('Error fetching salary info:', error.message);
+    }
+  }
 
   function closeModal() {
     show = false;
@@ -65,6 +98,13 @@
       gaji_per_pertemuan: 0,
       sudah_isi_profil: false
     };
+    unpaidSalary = 0;
+    paidSalary = 0;
+  }
+
+  // Fetch salary info when teacherData changes
+  $: if (show && teacherData.id) {
+    fetchSalaryInfo();
   }
 </script>
 
@@ -146,26 +186,38 @@
           <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
             <div class="flex items-center justify-between">
               <h4 class="text-sm font-medium text-gray-700">Gaji</h4>
-              <button aria-label="Label" class="text-purple-600">
+              <button 
+                aria-label="Lihat pertemuan belum dibayar" 
+                class="text-purple-600 hover:text-purple-700"
+                on:click={() => {
+                  window.location.href = `/admin/pertemuan?guru_id=${teacherData.id}&status_pembayaran=Belum`;
+                }}
+              >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               </button>
             </div>
-            <p class="text-lg font-semibold mt-1">0</p>
+            <p class="text-lg font-semibold mt-1">Rp {unpaidSalary.toLocaleString('id-ID')}</p>
             <p class="text-sm text-gray-500">Belum terbayar</p>
           </div>
-
+          
           <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
             <div class="flex items-center justify-between">
               <h4 class="text-sm font-medium text-gray-700">Gaji</h4>
-              <button aria-label="Label" class="text-purple-600">
+              <button 
+                aria-label="Lihat pertemuan sudah dibayar" 
+                class="text-purple-600 hover:text-purple-700"
+                on:click={() => {
+                  window.location.href = `/admin/pertemuan?guru_id=${teacherData.id}&status_pembayaran=Selesai`;
+                }}
+              >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               </button>
             </div>
-            <p class="text-lg font-semibold mt-1">0</p>
+            <p class="text-lg font-semibold mt-1">Rp {paidSalary.toLocaleString('id-ID')}</p>
             <p class="text-sm text-gray-500">Sudah terbayar</p>
           </div>
         </div>
